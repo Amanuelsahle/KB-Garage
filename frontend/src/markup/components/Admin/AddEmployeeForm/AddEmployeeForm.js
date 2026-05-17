@@ -3,8 +3,10 @@ import React, { useState } from "react";
 import employeeService from "../../../../services/employee.service";
 // Import the useAuth hook
 import { useAuth } from "../../../../Contexts/AuthContext";
-
+import { useNavigate } from "react-router-dom";
+import { Spinner } from "react-bootstrap";
 function AddEmployeeForm(props) {
+  const navigate = useNavigate();
   const [employee_email, setEmail] = useState("");
   const [employee_first_name, setFirstName] = useState("");
   const [employee_last_name, setLastName] = useState("");
@@ -18,6 +20,7 @@ function AddEmployeeForm(props) {
   const [passwordError, setPasswordError] = useState("");
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Create a variable to hold the user's token
   let loggedInEmployeeToken = "";
@@ -79,6 +82,7 @@ function AddEmployeeForm(props) {
       formData,
       loggedInEmployeeToken,
     );
+    setSubmitting(true);
     newEmployee
       .then((response) => response.json())
       .then((data) => {
@@ -86,6 +90,7 @@ function AddEmployeeForm(props) {
         // If Error is returned from the API server, set the error message
         if (data.error) {
           setServerError(data.error);
+          setSubmitting(false);
         } else {
           // Handle successful response
           setSuccess(true);
@@ -94,7 +99,7 @@ function AddEmployeeForm(props) {
           // For now, just redirect to the home page
           setTimeout(() => {
             // window.location.href = '/admin/employees';
-            window.location.href = "/";
+            navigate("/admin/employees");
           }, 2000);
         }
       })
@@ -107,6 +112,7 @@ function AddEmployeeForm(props) {
           error.message ||
           error.toString();
         setServerError(resMessage);
+        setSubmitting(false);
       });
   };
 
@@ -212,9 +218,13 @@ function AddEmployeeForm(props) {
                       <button
                         className="theme-btn btn-style-one"
                         type="submit"
-                        data-loading-text="Please wait..."
+                        disabled={submitting}
                       >
-                        <span>Add employee</span>
+                        {submitting ? (
+                          <Spinner animation="border" size="sm" role="status" aria-hidden="true" />
+                        ) : (
+                          <span>Add employee</span>
+                        )}
                       </button>
                     </div>
                   </div>

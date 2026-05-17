@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Table, Form, Button, Modal } from "react-bootstrap";
+import { Table, Form, Button, Modal, Spinner } from "react-bootstrap";
 // Import the auth hook
 import { useAuth } from "../../../../Contexts/AuthContext";
 // Import the date-fns library
@@ -45,6 +45,7 @@ function CustomerList() {
   const [apiError, setApiError] = useState(false);
   // A state to store the error message
   const [apiErrorMessage, setApiErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState(null);
   const [editCustomer, setEditCustomer] = useState(null);
   const [editActive, setEditActive] = useState("1");
@@ -64,6 +65,7 @@ function CustomerList() {
     }
     setApiError(false);
     setApiErrorMessage(null);
+    setLoading(true);
     return customerService.getAllCustomers(token).then(async (res) => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -81,7 +83,9 @@ function CustomerList() {
       if (Array.isArray(data?.data)) {
         setCustomers(data.data);
       }
-      console.log(data.data);
+      // console.log(data.data);
+    }).finally(() => {
+      setLoading(false);
     });
   }, [token]);
 
@@ -224,156 +228,165 @@ function CustomerList() {
                   aria-label="Search customers"
                 />
               </Form.Group>
-              <Table striped bordered hover>
-                <thead>
-                  <tr>
-                    <th>ID</th>
 
-                    <th>First Name</th>
-                    <th>Last Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Added Date</th>
-                    <th>Active</th>
-                    <th>Edit/Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedCustomers.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center text-muted py-4">
-                        {customers.length === 0
-                          ? "No customers yet."
-                          : "No customers match your search."}
-                      </td>
-                    </tr>
-                  ) : (
-                    pagedCustomers.map((customer) => (
-                      <tr
-                        key={customer.customer_id}
-
-
-                        className={`customer-table-row-profile-link ${Number(customer.active ?? customer.active_customer_status) === 1
-                          ? ""
-                          : "table-danger"
-                          }`}
-                        onClick={() =>
-                          navigate(`/admin/customers/${customer.customer_id}`)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            navigate(
-                              `/admin/customers/${customer.customer_id}`,
-                            );
-                          }
-                        }}
-                        tabIndex={0}
-                        role="link"
-                        aria-label={`View profile for ${customer.customer_first_name} ${customer.customer_last_name}`}
-                      >
-                        <td>{customer.customer_id}</td>
-                        <td>{customer.customer_first_name}</td>
-                        <td>{customer.customer_last_name}</td>
-                        <td>{customer.customer_email}</td>
-                        <td>{customer.customer_phone_number}</td>
-                        <td>
-                          {formatAddedDate(
-                            customer.customer_added_date ??
-                            customer.added_date,
-                          )}
-                        </td>
-                        <td>
-                          {Number(
-                            customer.active ??
-                            customer.active_customer_status,
-                          ) === 1
-                            ? "Yes"
-                            : "No"}
-                        </td>
-                        <td
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
-                        >
-                          <div className="admin-row-actions d-flex flex-wrap gap-2">
-                            <Button
-                              type="button"
-                              variant="outline-secondary"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/admin/customer/edit/${customer.customer_id}`);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={(e) =>
-                                handleDeleteCustomer(customer, e)
-                              }
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </Table>
-              {showPagination && (
-                <div className="customer-list-pagination mt-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
-                  <span className="text-muted small">
-                    Showing {rangeStart}–{rangeEnd} of {filteredCustomers.length}
-                  </span>
-                  <div className="d-flex flex-wrap gap-2">
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      disabled={currentPage === 0}
-                      onClick={() => setCurrentPage(0)}
-                    >
-                      First
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      disabled={currentPage === 0}
-                      onClick={() =>
-                        setCurrentPage((p) => Math.max(0, p - 1))
-                      }
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      disabled={currentPage >= lastPageIndex}
-                      onClick={() =>
-                        setCurrentPage((p) =>
-                          Math.min(lastPageIndex, p + 1),
-                        )
-                      }
-                    >
-                      Next
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      disabled={currentPage >= lastPageIndex}
-                      onClick={() => setCurrentPage(lastPageIndex)}
-                    >
-                      Last
-                    </Button>
-                  </div>
+              {loading ? (
+                <div className="text-center py-5"><span className="visually-hidden">Loading...</span>
+                  <Spinner animation="border" role="status" style={{ color: "blue" }} />
                 </div>
+              ) : (
+                <>
+                  <Table striped bordered hover>
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Added Date</th>
+                        <th>Active</th>
+                        <th>Edit/Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedCustomers.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="text-center text-muted py-4">
+                            {customers.length === 0
+                              ? "No customers yet."
+                              : "No customers match your search."}
+                          </td>
+                        </tr>
+                      ) : (
+                        pagedCustomers.map((customer) => (
+                          <tr
+                            key={customer.customer_id}
+
+
+                            className={`customer-table-row-profile-link ${Number(customer.active ?? customer.active_customer_status) === 1
+                              ? ""
+                              : "table-danger"
+                              }`}
+                            onClick={() =>
+                              navigate(`/admin/customers/${customer.customer_id}`)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                navigate(
+                                  `/admin/customers/${customer.customer_id}`,
+                                );
+                              }
+                            }}
+                            tabIndex={0}
+                            role="link"
+                            aria-label={`View profile for ${customer.customer_first_name} ${customer.customer_last_name}`}
+                          >
+                            <td>{customer.customer_id}</td>
+                            <td>{customer.customer_first_name}</td>
+                            <td>{customer.customer_last_name}</td>
+                            <td>{customer.customer_email}</td>
+                            <td>{customer.customer_phone_number}</td>
+                            <td>
+                              {formatAddedDate(
+                                customer.customer_added_date ??
+                                customer.added_date,
+                              )}
+                            </td>
+                            <td>
+                              {Number(
+                                customer.active ??
+                                customer.active_customer_status,
+                              ) === 1
+                                ? "Yes"
+                                : "No"}
+                            </td>
+                            <td
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            >
+                              <div className="admin-row-actions d-flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline-secondary"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/admin/customer/edit/${customer.customer_id}`);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={(e) =>
+                                    handleDeleteCustomer(customer, e)
+                                  }
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </Table>
+                  {showPagination && (
+                    <div className="customer-list-pagination mt-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <span className="text-muted small">
+                        Showing {rangeStart}–{rangeEnd} of {filteredCustomers.length}
+                      </span>
+                      <div className="d-flex flex-wrap gap-2">
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          type="button"
+                          disabled={currentPage === 0}
+                          onClick={() => setCurrentPage(0)}
+                        >
+                          First
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          type="button"
+                          disabled={currentPage === 0}
+                          onClick={() =>
+                            setCurrentPage((p) => Math.max(0, p - 1))
+                          }
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          type="button"
+                          disabled={currentPage >= lastPageIndex}
+                          onClick={() =>
+                            setCurrentPage((p) =>
+                              Math.min(lastPageIndex, p + 1),
+                            )
+                          }
+                        >
+                          Next
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          type="button"
+                          disabled={currentPage >= lastPageIndex}
+                          onClick={() => setCurrentPage(lastPageIndex)}
+                        >
+                          Last
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>

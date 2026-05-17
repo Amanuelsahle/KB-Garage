@@ -45,22 +45,22 @@ function LoginForm() {
       employee_email,
       employee_password
     };
-    console.log(formData);
+    // console.log(formData);
     // Call the service
     const loginEmployee = loginService.logIn(formData);
-    console.log(loginEmployee);
+    // console.log(loginEmployee);
     loginEmployee.then((response) => response.json())
       .then((response) => {
-        console.log(response);
+        // console.log(response);
         if (response.status === 'success') {
           // Save the user in the local storage
           if (response.data.employee_token) {
-            console.log(response.data);
+            // console.log(response.data);
             localStorage.setItem("employee", JSON.stringify(response.data));
           }
           // Redirect the user to the dashboard
           // navigate('/admin');
-          console.log(location);
+          // console.log(location);
           if (location.pathname === '/login') {
             // navigate('/admin');
             // window.location.replace('/admin');

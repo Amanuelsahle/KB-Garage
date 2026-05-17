@@ -11,7 +11,7 @@ const createEmployee = async (formData, loggedInEmployeeToken) => {
     },
     body: JSON.stringify(formData)
   };
-  console.log(requestOptions);
+  // console.log(requestOptions);
   const response = await fetch(`${api_url}/api/employee`, requestOptions);
   return response;
 }
@@ -32,12 +32,12 @@ const getAllEmployees = async (token) => {
 
 
 // A function to send get request to single employee 
-const getEmployeeById = async (employeeId) => {
+const getEmployeeById = async (employeeId, token) => {
   const requestOptions = {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-
+      "x-access-token": token,
     },
   };
   const response = await fetch(
@@ -49,11 +49,12 @@ const getEmployeeById = async (employeeId) => {
 
 
 // A function to send patch request to update employee information 
-const updateEmployeeInfo = async (employeeId, formData) => {
+const updateEmployeeInfo = async (employeeId, formData, token) => {
   const requestOptions = {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      "x-access-token": token,
     },
     body: JSON.stringify(formData),
   };

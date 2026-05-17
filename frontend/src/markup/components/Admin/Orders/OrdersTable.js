@@ -151,9 +151,8 @@ function OrdersTable({ orders, onStatusChange, updatingOrderId }) {
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-link p-0 ${
-                      isEditingStatus ? "text-danger" : "text-secondary"
-                    }`}
+                    className={`btn btn-link p-0 ${isEditingStatus ? "text-danger" : "text-secondary"
+                      }`}
                     title={
                       isEditingStatus
                         ? "Close status editor"

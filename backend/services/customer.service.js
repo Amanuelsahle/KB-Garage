@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 // A function to check if customer exists in the database if one of customer phone or customer email is exists
 async function checkIfCustomerExists(customer_phone_number, customer_email) {
   const query =
-    "SELECT * FROM customer_identifier WHERE customer_phone_number = ? OR customer_email = ?";
+    "SELECT * FROM customer_identifier WHERE customer_phone_number = $1 OR customer_email = $2";
   const rows = await conn.query(query, [customer_phone_number, customer_email]);
   if (rows.length > 0) {
     return true;
@@ -21,32 +21,30 @@ async function createCustomer(customer) {
     const salt = await bcrypt.genSalt(10);
     const customer_hash = await bcrypt.hash(customer.customer_email, salt);
     const query =
-      "INSERT INTO customer_identifier (customer_phone_number, customer_email,customer_hash) VALUES (?, ? ,?)";
+      "INSERT INTO customer_identifier (customer_phone_number, customer_email, customer_hash) VALUES ($1, $2, $3) RETURNING customer_id";
     const rows = await conn.query(query, [
       customer.customer_phone_number,
       customer.customer_email,
       customer_hash,
     ]);
-    if (rows.affectedRows !== 1) {
+    if (rows.length !== 1) {
       return false;
     }
-    const customer_id = rows.insertId;
+    const customer_id = rows[0].customer_id;
     const activeStatus =
       customer.active_customer_status !== undefined &&
       customer.active_customer_status !== null
         ? customer.active_customer_status
         : 1;
     const query2 =
-      "INSERT INTO customer_info (customer_id, customer_first_name, customer_last_name,active_customer_status) VALUES (?, ?, ?, ?)";
+      "INSERT INTO customer_info (customer_id, customer_first_name, customer_last_name, active_customer_status) VALUES ($1, $2, $3, $4)";
     const rows2 = await conn.query(query2, [
       customer_id,
       customer.customer_first_name,
       customer.customer_last_name,
       activeStatus,
     ]);
-    if (rows2.affectedRows !== 1) {
-      return false;
-    }
+    // if rows2 didn't throw an error, it succeeded
     createdCustomer = {
       customer_id: customer_id,
     };
@@ -71,7 +69,7 @@ async function getCustomerById(customerId) {
     return null;
   }
   const query =
-    "SELECT customer_identifier.customer_id, customer_identifier.customer_email, customer_identifier.customer_phone_number, customer_identifier.customer_added_date, customer_info.customer_first_name, customer_info.customer_last_name, customer_info.active_customer_status FROM customer_identifier INNER JOIN customer_info ON customer_identifier.customer_id = customer_info.customer_id WHERE customer_identifier.customer_id = ?";
+    "SELECT customer_identifier.customer_id, customer_identifier.customer_email, customer_identifier.customer_phone_number, customer_identifier.customer_added_date, customer_info.customer_first_name, customer_info.customer_last_name, customer_info.active_customer_status FROM customer_identifier INNER JOIN customer_info ON customer_identifier.customer_id = customer_info.customer_id WHERE customer_identifier.customer_id = $1";
   const rows = await conn.query(query, [id]);
   if (!rows || rows.length === 0) {
     return null;
@@ -85,7 +83,7 @@ async function getVehiclesByCustomerId(customerId) {
     return [];
   }
   const query =
-    "SELECT vehicle_id, customer_id, vehicle_year, vehicle_make, vehicle_model, vehicle_type, vehicle_mileage, vehicle_tag, vehicle_serial, vehicle_color FROM customer_vehicle_info WHERE customer_id = ? ORDER BY vehicle_id DESC";
+    "SELECT vehicle_id, customer_id, vehicle_year, vehicle_make, vehicle_model, vehicle_type, vehicle_mileage, vehicle_tag, vehicle_serial, vehicle_color FROM customer_vehicle_info WHERE customer_id = $1 ORDER BY vehicle_id DESC";
   return conn.query(query, [id]);
 }
 
@@ -95,7 +93,7 @@ async function addVehicle(customerId, vehicle) {
     return false;
   }
   const query =
-    "INSERT INTO customer_vehicle_info (customer_id, vehicle_year, vehicle_make, vehicle_model, vehicle_type, vehicle_mileage, vehicle_tag, vehicle_serial, vehicle_color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO customer_vehicle_info (customer_id, vehicle_year, vehicle_make, vehicle_model, vehicle_type, vehicle_mileage, vehicle_tag, vehicle_serial, vehicle_color) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING vehicle_id";
   const rows = await conn.query(query, [
     id,
     vehicle.vehicle_year,
@@ -107,10 +105,10 @@ async function addVehicle(customerId, vehicle) {
     vehicle.vehicle_serial,
     vehicle.vehicle_color,
   ]);
-  if (rows.affectedRows !== 1) {
+  if (rows.length !== 1) {
     return false;
   }
-  return { vehicle_id: rows.insertId };
+  return { vehicle_id: rows[0].vehicle_id };
 }
 
 async function updateCustomerActiveStatus(customerId, activeStatus) {
@@ -123,10 +121,10 @@ async function updateCustomerActiveStatus(customerId, activeStatus) {
     return false;
   }
   const rows = await conn.query(
-    "UPDATE customer_info SET active_customer_status = ? WHERE customer_id = ?",
+    "UPDATE customer_info SET active_customer_status = $1 WHERE customer_id = $2",
     [s, id],
   );
-  return rows.affectedRows >= 1;
+  return true;
 }
 
 async function softDeleteCustomer(customerId) {
@@ -138,19 +136,21 @@ async function updateCustomerInfo(customerId, customer) {
   if (!Number.isFinite(id) || id < 1) {
     return false;
   }
-  
+
   try {
-    const query1 = "UPDATE customer_identifier SET customer_phone_number = ? WHERE customer_id = ?";
+    const query1 =
+      "UPDATE customer_identifier SET customer_phone_number = $1 WHERE customer_id = $2";
     await conn.query(query1, [customer.customer_phone_number, id]);
-    
-    const query2 = "UPDATE customer_info SET customer_first_name = ?, customer_last_name = ?, active_customer_status = ? WHERE customer_id = ?";
+
+    const query2 =
+      "UPDATE customer_info SET customer_first_name = $1, customer_last_name = $2, active_customer_status = $3 WHERE customer_id = $4";
     await conn.query(query2, [
       customer.customer_first_name,
       customer.customer_last_name,
       customer.active_customer_status,
-      id
+      id,
     ]);
-    
+
     return true;
   } catch (err) {
     console.log(err);

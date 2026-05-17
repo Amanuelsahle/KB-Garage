@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Spinner } from "react-bootstrap";
 import employeeService from "../../../../services/employee.service";
+import { useAuth } from "../../../../Contexts/AuthContext";
 
 function EditEmployee() {
     const [employee_email, setEmail] = useState("");
@@ -17,13 +19,17 @@ function EditEmployee() {
 
     const { employeeId } = useParams();
     const navigate = useNavigate();
-
+    const { employee } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const loggedInEmployeeToken = employee?.employee_token;
 
     useEffect(() => {
         // Fetch employee details
         const fetchEmployee = async () => {
+            setLoading(true);
             try {
-                const response = await employeeService.getEmployeeById(employeeId);
+                const response = await employeeService.getEmployeeById(employeeId, loggedInEmployeeToken);
                 if (response.ok) {
                     const data = await response.json();
                     // console.log(data);
@@ -44,6 +50,7 @@ function EditEmployee() {
             } catch (err) {
                 setServerError("Failed to fetch employee data");
             }
+            setLoading(false);
         };
         if (employeeId) {
             fetchEmployee();
@@ -70,13 +77,15 @@ function EditEmployee() {
             company_role_id,
         };
 
+        setSubmitting(true);
         employeeService
-            .updateEmployeeInfo(employeeId, formData)
+            .updateEmployeeInfo(employeeId, formData, loggedInEmployeeToken)
             .then((response) => response.json())
             .then((data) => {
                 const errText = data.error || data.message;
                 if (data.status !== "success") {
                     setServerError(errText || "Failed to update employee");
+                    setSubmitting(false);
                 } else {
                     setSuccess(true);
                     setServerError("");
@@ -87,6 +96,7 @@ function EditEmployee() {
             })
             .catch((error) => {
                 setServerError(error.message || "Failed to update employee");
+                setSubmitting(false);
             });
     };
 
@@ -96,6 +106,12 @@ function EditEmployee() {
                 <div className="contact-title">
                     <h2>Edit Employee</h2>
                 </div>
+                {loading ? (
+                    <div className="text-center py-5">
+                        <span className="visually-hidden">Loading...</span>
+                        <Spinner animation="border" role="status" style={{ color: "blue" }} />
+                    </div>
+                ) : ("")}
                 <div className="row clearfix">
                     <div className="form-column col-lg-7">
                         <div className="inner-column">
@@ -201,7 +217,13 @@ function EditEmployee() {
                                             </label>
                                         </div>
                                         <div className="form-group col-md-12">
-                                            <button type="submit" className="theme-btn btn-style-one">Update Customer</button>
+                                            <button type="submit" className="theme-btn btn-style-one" disabled={submitting}>
+                                                {submitting ? (
+                                                    <Spinner animation="border" size="sm" role="status" aria-hidden="true" />
+                                                ) : (
+                                                    <span>Update Employee</span>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
                                 </form>

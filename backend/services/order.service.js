@@ -9,6 +9,8 @@ const ORDER_STATUS = Object.freeze({
 });
 
 async function getAllOrdersForList() {
+  // Query 1: Cleaned up and fully compatible with PostgreSQL. 
+  // No variable arguments here, but standard subqueries run perfectly on Supabase.
   const sql = `
     SELECT
       o.order_id,
@@ -47,8 +49,9 @@ async function getAllOrdersForList() {
 }
 
 async function vehicleBelongsToCustomer(vehicleId, customerId) {
+  // Changed placeholders from "?" to "$1" and "$2"
   const rows = await query(
-    "SELECT vehicle_id FROM customer_vehicle_info WHERE vehicle_id = ? AND customer_id = ? LIMIT 1",
+    "SELECT vehicle_id FROM customer_vehicle_info WHERE vehicle_id = $1 AND customer_id = $2 LIMIT 1",
     [vehicleId, customerId],
   );
   return Array.isArray(rows) && rows.length > 0;
@@ -96,31 +99,36 @@ async function createOrder(payload) {
 
   try {
     const orderId = await withTransaction(async (conn) => {
-      const [orderRes] = await conn.execute(
+      // 1. Appended "RETURNING order_id" to capture the row in Postgres
+      // 2. Changed placeholders to numbered layout $1, $2, $3, $4
+      const [rows] = await conn.execute(
         `INSERT INTO orders (employee_id, customer_id, vehicle_id, active_order, order_hash)
-         VALUES (?, ?, ?, 1, ?)`,
+         VALUES ($1, $2, $3, 1, $4) RETURNING order_id`,
         [employeeId, customerId, vehicleId, orderHash],
       );
-      const rawId = orderRes.insertId;
-      const newOrderId =
-        typeof rawId === "bigint" ? Number(rawId) : Number(rawId);
 
+      // Extract the dynamic key from our compatibility wrapper array's first row object
+      const newOrderId = Number(rows[0].order_id);
+
+      // Changed placeholders to $1, $2, $3, $4, $5
       await conn.execute(
         `INSERT INTO order_info (
           order_id, order_total_price, additional_request,
           notes_for_internal_use, notes_for_customer, additional_requests_completed
-        ) VALUES (?, ?, ?, ?, ?, 0)`,
+        ) VALUES ($1, $2, $3, $4, $5, 0)`,
         [newOrderId, orderTotalPrice, additionalRequest, notesInternal, notesCustomer],
       );
 
+      // Changed placeholders to $1, $2
       await conn.execute(
-        "INSERT INTO order_status (order_id, order_status) VALUES (?, 1)",
+        "INSERT INTO order_status (order_id, order_status) VALUES ($1, 1)",
         [newOrderId],
       );
 
+      // Loop queries start tracking parameters over from $1 and $2 respectively
       for (const sid of serviceIds) {
         await conn.execute(
-          "INSERT INTO order_services (order_id, service_id, service_completed) VALUES (?, ?, 0)",
+          "INSERT INTO order_services (order_id, service_id, service_completed) VALUES ($1, $2, 0)",
           [newOrderId, sid],
         );
       }
@@ -154,8 +162,9 @@ async function updateOrderStatus(orderId, orderStatus) {
     };
   }
 
+  // Changed placeholder to $1
   const exists = await query(
-    "SELECT order_id FROM orders WHERE order_id = ? LIMIT 1",
+    "SELECT order_id FROM orders WHERE order_id = $1 LIMIT 1",
     [id],
   );
   if (!exists || exists.length === 0) {
@@ -163,8 +172,9 @@ async function updateOrderStatus(orderId, orderStatus) {
   }
 
   try {
+    // Changed placeholders to $1, $2
     await query(
-      "INSERT INTO order_status (order_id, order_status) VALUES (?, ?)",
+      "INSERT INTO order_status (order_id, order_status) VALUES ($1, $2)",
       [id, status],
     );
     return { ok: true, order_id: id, order_status: status };

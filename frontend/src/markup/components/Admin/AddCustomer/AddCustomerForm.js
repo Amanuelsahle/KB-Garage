@@ -3,8 +3,11 @@ import React, { useState } from "react";
 import customerService from "../../../../services/customer.service";
 // Import the useAuth hook
 import { useAuth } from "../../../../Contexts/AuthContext";
+import { Spinner } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 function AddCustomerForm() {
+  const navigate = useNavigate();
   const [customer_email, setEmail] = useState("");
   const [customer_first_name, setFirstName] = useState("");
   const [customer_last_name, setLastName] = useState("");
@@ -15,6 +18,7 @@ function AddCustomerForm() {
   const [firstNameRequired, setFirstNameRequired] = useState("");
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Create a variable to hold the user's token
   let loggedInEmployeeToken = "";
@@ -66,6 +70,7 @@ function AddCustomerForm() {
       formData,
       loggedInEmployeeToken,
     );
+    setSubmitting(true);
     newCustomer
       .then((response) => response.json())
       .then((data) => {
@@ -73,6 +78,7 @@ function AddCustomerForm() {
         const errText = data.error || data.message;
         if (errText) {
           setServerError(errText);
+          setSubmitting(false);
         } else {
           // Handle successful response
           setSuccess(true);
@@ -80,8 +86,7 @@ function AddCustomerForm() {
           // Redirect to the employees page after 2 seconds
           // For now, just redirect to the home page
           setTimeout(() => {
-            // window.location.href = '/admin/employees';
-            window.location.href = "/";
+            navigate("/admin/customers");
           }, 2000);
         }
       })
@@ -94,6 +99,7 @@ function AddCustomerForm() {
           error.message ||
           error.toString();
         setServerError(resMessage);
+        setSubmitting(false);
       });
   };
   return (
@@ -168,9 +174,13 @@ function AddCustomerForm() {
                       <button
                         className="theme-btn btn-style-one"
                         type="submit"
-                        data-loading-text="Please wait..."
+                        disabled={submitting}
                       >
-                        <span>ADD CUSTOMER</span>
+                        {submitting ? (
+                          <Spinner animation="border" size="sm" role="status" aria-hidden="true" />
+                        ) : (
+                          <span>ADD CUSTOMER</span>
+                        )}
                       </button>
                     </div>
                   </div>

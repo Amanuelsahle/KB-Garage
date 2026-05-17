@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import serviceService from "../../../../services/service.service";
+import { Spinner } from "react-bootstrap";
 
 function ServiceList({ listVersion = 0 }) {
   const [services, setServices] = useState([]);
   const [listError, setListError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const loadServices = useCallback(() => {
+    setLoading(true);
     serviceService
       .getAllServices()
       .then((res) => {
@@ -26,6 +29,7 @@ function ServiceList({ listVersion = 0 }) {
         setListError("Could not load services. Please try again later.");
         setServices([]);
       });
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -40,6 +44,12 @@ function ServiceList({ listVersion = 0 }) {
         Below you will find a list of all the services currently available at
         the garage. Use the form at the bottom of the page to add a new service.
       </p>
+      {loading ? (
+        <div className="text-center py-5">
+          <span className="visually-hidden">Loading...</span>
+          <Spinner animation="border" role="status" style={{ color: "blue" }} />
+        </div>
+      ) : ("")}
       {listError && (
         <p className="text-danger mb-3" role="alert">
           {listError}
