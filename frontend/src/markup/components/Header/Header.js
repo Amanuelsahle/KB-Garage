@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import logo from '../../../assets/images/logo.png';
 import iconBar from '../../../assets/template_assets/images/icons/icon-bar.png';
 import customLogo from '../../../assets/template_assets/images/custom/logo.png';
-import logoTwo from '../../../assets/template_assets/images/logo-two.png';
+import logoTwo from '../../../assets/images/logo.png';
 // Import the login service to access the logout function
 import loginService from '../../../services/login.service';
 // Import the custom context hook 

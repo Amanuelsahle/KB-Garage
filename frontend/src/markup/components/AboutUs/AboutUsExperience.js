@@ -18,7 +18,7 @@ const AboutUsExperience = () => {
                     <div className="col-lg-7 pl-lg-5">
                         <div className="sec-title">
                             <h5>Welcome to Our workshop</h5>
-                            <h2>We have 24 years experience</h2>
+                            <h2>We have 20 years experience</h2>
                             <div className="text">
                                 <p>Bring to the table win-win survival strategies to ensure proactive domination. At the
                                     end of the day, going forward, a new normal that has evolved from generation X is on
