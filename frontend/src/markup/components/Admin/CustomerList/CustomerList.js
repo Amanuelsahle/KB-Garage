@@ -66,27 +66,30 @@ function CustomerList() {
     setApiError(false);
     setApiErrorMessage(null);
     setLoading(true);
-    return customerService.getAllCustomers(token).then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setApiError(true);
-        if (res.status === 401) {
-          setApiErrorMessage("Please login again");
-        } else if (res.status === 403) {
-          setApiErrorMessage("You are not authorized to view this page");
-        } else {
-          setApiErrorMessage("Please try again later");
+    return customerService
+      .getAllCustomers(token)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setApiError(true);
+          if (res.status === 401) {
+            setApiErrorMessage("Please login again");
+          } else if (res.status === 403) {
+            setApiErrorMessage("You are not authorized to view this page");
+          } else {
+            setApiErrorMessage("Please try again later");
+          }
+          setCustomers([]);
+          return;
         }
-        setCustomers([]);
-        return;
-      }
-      if (Array.isArray(data?.data)) {
-        setCustomers(data.data);
-      }
-      // console.log(data.data);
-    }).finally(() => {
-      setLoading(false);
-    });
+        if (Array.isArray(data?.data)) {
+          setCustomers(data.data);
+        }
+        // console.log(data.data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [token]);
 
   useEffect(() => {
@@ -98,8 +101,7 @@ function CustomerList() {
     setActionError(null);
     setModalError(null);
     setEditCustomer(customer);
-    const active =
-      customer.active ?? customer.active_customer_status ?? 0;
+    const active = customer.active ?? customer.active_customer_status ?? 0;
     setEditActive(Number(active) === 1 ? "1" : "0");
   };
 
@@ -112,11 +114,7 @@ function CustomerList() {
     setSaving(true);
     setModalError(null);
     customerService
-      .updateCustomerStatus(
-        editCustomer.customer_id,
-        Number(editActive),
-        token,
-      )
+      .updateCustomerStatus(editCustomer.customer_id, Number(editActive), token)
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -126,7 +124,11 @@ function CustomerList() {
         setCustomers((prev) =>
           prev.map((c) =>
             Number(c.customer_id) === Number(editCustomer.customer_id)
-              ? { ...c, active_customer_status: Number(editActive), active: Number(editActive) }
+              ? {
+                  ...c,
+                  active_customer_status: Number(editActive),
+                  active: Number(editActive),
+                }
               : c,
           ),
         );
@@ -144,24 +146,26 @@ function CustomerList() {
     );
     if (!ok) return;
     setActionError(null);
-    customerService.deleteCustomer(customer.customer_id, token).then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setActionError(data.error || data.message || "Delete failed");
-        return;
-      }
-      setCustomers((prev) =>
-        prev.map((c) =>
-          Number(c.customer_id) === Number(customer.customer_id)
-            ? {
-              ...c,
-              active_customer_status: 0,
-              active: 0,
-            }
-            : c,
-        ),
-      );
-    });
+    customerService
+      .deleteCustomer(customer.customer_id, token)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setActionError(data.error || data.message || "Delete failed");
+          return;
+        }
+        setCustomers((prev) =>
+          prev.map((c) =>
+            Number(c.customer_id) === Number(customer.customer_id)
+              ? {
+                  ...c,
+                  active_customer_status: 0,
+                  active: 0,
+                }
+              : c,
+          ),
+        );
+      });
   };
 
   const filteredCustomers = useMemo(() => {
@@ -230,12 +234,17 @@ function CustomerList() {
               </Form.Group>
 
               {loading ? (
-                <div className="text-center py-5"><span className="visually-hidden">Loading...</span>
-                  <Spinner animation="border" role="status" style={{ color: "blue" }} />
+                <div className="text-center py-5">
+                  <span className="visually-hidden">Loading...</span>
+                  <Spinner
+                    animation="border"
+                    role="status"
+                    style={{ color: "blue" }}
+                  />
                 </div>
               ) : (
                 <>
-                  <Table striped bordered hover>
+                  <Table striped bordered hover responsive>
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -252,7 +261,10 @@ function CustomerList() {
                     <tbody>
                       {pagedCustomers.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="text-center text-muted py-4">
+                          <td
+                            colSpan={8}
+                            className="text-center text-muted py-4"
+                          >
                             {customers.length === 0
                               ? "No customers yet."
                               : "No customers match your search."}
@@ -262,14 +274,18 @@ function CustomerList() {
                         pagedCustomers.map((customer) => (
                           <tr
                             key={customer.customer_id}
-
-
-                            className={`customer-table-row-profile-link ${Number(customer.active ?? customer.active_customer_status) === 1
-                              ? ""
-                              : "table-danger"
-                              }`}
+                            className={`customer-table-row-profile-link ${
+                              Number(
+                                customer.active ??
+                                  customer.active_customer_status,
+                              ) === 1
+                                ? ""
+                                : "table-danger"
+                            }`}
                             onClick={() =>
-                              navigate(`/admin/customers/${customer.customer_id}`)
+                              navigate(
+                                `/admin/customers/${customer.customer_id}`,
+                              )
                             }
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
@@ -291,13 +307,13 @@ function CustomerList() {
                             <td>
                               {formatAddedDate(
                                 customer.customer_added_date ??
-                                customer.added_date,
+                                  customer.added_date,
                               )}
                             </td>
                             <td>
                               {Number(
                                 customer.active ??
-                                customer.active_customer_status,
+                                  customer.active_customer_status,
                               ) === 1
                                 ? "Yes"
                                 : "No"}
@@ -313,7 +329,9 @@ function CustomerList() {
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/admin/customer/edit/${customer.customer_id}`);
+                                    navigate(
+                                      `/admin/customer/edit/${customer.customer_id}`,
+                                    );
                                   }}
                                 >
                                   Edit
@@ -338,7 +356,8 @@ function CustomerList() {
                   {showPagination && (
                     <div className="customer-list-pagination mt-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
                       <span className="text-muted small">
-                        Showing {rangeStart}–{rangeEnd} of {filteredCustomers.length}
+                        Showing {rangeStart}–{rangeEnd} of{" "}
+                        {filteredCustomers.length}
                       </span>
                       <div className="d-flex flex-wrap gap-2">
                         <Button
