@@ -56,7 +56,7 @@
   }
 
   .admin-menu h2 {
-    display: none;
+    display: none !important;
   }
 
   .admin-menu-toggle {
