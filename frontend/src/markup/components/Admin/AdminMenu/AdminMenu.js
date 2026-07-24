@@ -6,7 +6,7 @@ function AdminMenu(props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
-    setIsOpen(!isOpen);
+    setIsOpen((prevOpen) => !prevOpen);
   };
 
   const closeMenu = () => {
@@ -14,15 +14,24 @@ function AdminMenu(props) {
   };
 
   return (
-    <div>
+    <div className="admin-menu-wrapper">
       <div className="admin-menu">
-        <button className="admin-menu-toggle d-md-none" onClick={toggleMenu}>
+        <button
+          className="admin-menu-toggle d-md-none"
+          onClick={toggleMenu}
+          aria-expanded={isOpen}
+          aria-controls="admin-menu-list"
+          type="button"
+        >
           <span className="toggle-icon">☰</span>
           <span className="toggle-text">Admin Menu</span>
         </button>
         <h2>Admin Menu</h2>
       </div>
-      <div className={`list-group admin-menu-list ${isOpen ? "open" : ""}`}>
+      <div
+        id="admin-menu-list"
+        className={`list-group admin-menu-list ${isOpen ? "open" : ""}`}
+      >
         <Link to="/admin" className="list-group-item" onClick={closeMenu}>
           Dashboard
         </Link>

@@ -67,12 +67,12 @@
   }
 
   .admin-menu-list {
-    display: none;
+    display: none !important;
     width: 100%;
   }
 
   .admin-menu-list.open {
-    display: block;
+    display: block !important;
     animation: slideDown 0.3s ease-out;
   }
 
