@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import customerService from "../../../../services/customer.service";
 // Import the useAuth hook
 import { useAuth } from "../../../../Contexts/AuthContext";
+import { getStoredEmployeeToken } from "../../../../util/auth";
 import { Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
@@ -20,13 +21,13 @@ function AddCustomerForm() {
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Create a variable to hold the user's token
-  let loggedInEmployeeToken = "";
   // Destructure the auth hook and get the token
   const { employee } = useAuth();
-  if (employee && employee.employee_token) {
-    loggedInEmployeeToken = employee.employee_token;
-  }
+  const loggedInEmployeeToken =
+    typeof employee?.employee_token === "string" &&
+    employee.employee_token.trim().length > 0
+      ? employee.employee_token.trim()
+      : getStoredEmployeeToken();
   // Handle client side validations
   const handleSubmit = (e) => {
     // Prevent the default behavior of the form
@@ -177,7 +178,12 @@ function AddCustomerForm() {
                         disabled={submitting}
                       >
                         {submitting ? (
-                          <Spinner animation="border" size="sm" role="status" aria-hidden="true" />
+                          <Spinner
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                          />
                         ) : (
                           <span>ADD CUSTOMER</span>
                         )}

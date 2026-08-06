@@ -108,7 +108,14 @@ function App() {
           }
         />
         {/* // Add the Employees Route  */}
-        <Route path="/admin/employees" element={<Employees />} />
+        <Route
+          path="/admin/employees"
+          element={
+            <PrivateAuthRoute roles={[3]}>
+              <Employees />
+            </PrivateAuthRoute>
+          }
+        />
         <Route
           path="/admin/add-employee"
           element={

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import employeeService from "../../../../services/employee.service";
 // Import the useAuth hook
 import { useAuth } from "../../../../Contexts/AuthContext";
+import { getStoredEmployeeToken } from "../../../../util/auth";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
 function AddEmployeeForm(props) {
@@ -22,13 +23,13 @@ function AddEmployeeForm(props) {
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Create a variable to hold the user's token
-  let loggedInEmployeeToken = "";
   // Destructure the auth hook and get the token
   const { employee } = useAuth();
-  if (employee && employee.employee_token) {
-    loggedInEmployeeToken = employee.employee_token;
-  }
+  const loggedInEmployeeToken =
+    typeof employee?.employee_token === "string" &&
+    employee.employee_token.trim().length > 0
+      ? employee.employee_token.trim()
+      : getStoredEmployeeToken();
 
   const handleSubmit = (e) => {
     // Prevent the default behavior of the form
@@ -221,7 +222,12 @@ function AddEmployeeForm(props) {
                         disabled={submitting}
                       >
                         {submitting ? (
-                          <Spinner animation="border" size="sm" role="status" aria-hidden="true" />
+                          <Spinner
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                          />
                         ) : (
                           <span>Add employee</span>
                         )}
