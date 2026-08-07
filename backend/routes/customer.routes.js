@@ -5,11 +5,12 @@ const router = express.Router();
 const customerController = require("../controllers/customer.controller");
 // import auth middleware
 const authMiddleware = require("../middlewares/auth.middleware");
+const { authLimiter } = require("../middlewares/rateLimit.middleware");
 
 // Create a route to handle the add customer request on post
 router.post(
   "/api/customer",
-  [authMiddleware.verifyToken, authMiddleware.isAdminOrManager],
+  [authMiddleware.verifyToken, authMiddleware.isAdminOrManager, authLimiter],
   customerController.createCustomer,
 );
 // Create a route to handle the get all customers request on get
@@ -21,14 +22,17 @@ router.get(
 // Customer profile & vehicles (no auth middleware)
 router.get(
   "/api/customers/:customerId",
+  [authMiddleware.verifyToken, authMiddleware.isAdminOrManager],
   customerController.getCustomerById,
 );
 router.get(
   "/api/customers/:customerId/vehicles",
+  [authMiddleware.verifyToken, authMiddleware.isAdminOrManager],
   customerController.getCustomerVehicles,
 );
 router.post(
   "/api/customers/:customerId/vehicles",
+  [authMiddleware.verifyToken, authMiddleware.isAdminOrManager],
   customerController.addCustomerVehicle,
 );
 router.patch(
@@ -43,7 +47,8 @@ router.delete(
 );
 router.put(
   "/api/customer/edit/:customerId",
-  customerController.updateCustomer
+  [authMiddleware.verifyToken, authMiddleware.isAdminOrManager],
+  customerController.updateCustomer,
 );
 // Export the router
 module.exports = router;

@@ -116,6 +116,17 @@ CREATE TABLE IF NOT EXISTS order_status (
   order_status INT NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_customer_info_customer_id ON customer_info(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_vehicle_info_customer_id ON customer_vehicle_info(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_employee_id ON orders(employee_id);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_vehicle_id ON orders(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_order_id ON order_status(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_services_order_id ON order_services(order_id);
+CREATE INDEX IF NOT EXISTS idx_employee_role_employee_id ON employee_role(employee_id);
+CREATE INDEX IF NOT EXISTS idx_employee_role_company_role_id ON employee_role(company_role_id);
+CREATE INDEX IF NOT EXISTS idx_customer_identifier_phone ON customer_identifier(customer_phone_number);
+
 -- ==========================================
 -- AUTOMATIC UPDATE TRIGGERS (Replaces ON UPDATE)
 -- ==========================================

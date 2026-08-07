@@ -8,6 +8,9 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false, // Required for a secure connection to Supabase
   },
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // Prepare a function that will execute the SQL queries asynchronously

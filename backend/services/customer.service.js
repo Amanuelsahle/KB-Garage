@@ -5,12 +5,9 @@ const bcrypt = require("bcrypt");
 // A function to check if customer exists in the database if one of customer phone or customer email is exists
 async function checkIfCustomerExists(customer_phone_number, customer_email) {
   const query =
-    "SELECT * FROM customer_identifier WHERE customer_phone_number = $1 OR customer_email = $2";
+    "SELECT 1 FROM customer_identifier WHERE customer_phone_number = $1 OR customer_email = $2 LIMIT 1";
   const rows = await conn.query(query, [customer_phone_number, customer_email]);
-  if (rows.length > 0) {
-    return true;
-  }
-  return false;
+  return rows.length > 0;
 }
 
 // A function to create a new customer
@@ -57,8 +54,18 @@ async function createCustomer(customer) {
 
 // create getAllCustomers service
 async function getAllCustomers() {
-  const query =
-    "SELECT * FROM customer_identifier INNER JOIN customer_info ON customer_identifier.customer_id = customer_info.customer_id ORDER BY customer_identifier.customer_id DESC limit 10";
+  const query = `SELECT
+       customer_identifier.customer_id,
+       customer_identifier.customer_email,
+       customer_identifier.customer_phone_number,
+       customer_identifier.customer_added_date,
+       customer_info.customer_first_name,
+       customer_info.customer_last_name,
+       customer_info.active_customer_status
+     FROM customer_identifier
+     INNER JOIN customer_info ON customer_identifier.customer_id = customer_info.customer_id
+     ORDER BY customer_identifier.customer_id DESC
+     LIMIT 10`;
   const rows = await conn.query(query);
   return rows;
 }

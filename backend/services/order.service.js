@@ -9,7 +9,7 @@ const ORDER_STATUS = Object.freeze({
 });
 
 async function getAllOrdersForList() {
-  // Query 1: Cleaned up and fully compatible with PostgreSQL. 
+  // Query 1: Cleaned up and fully compatible with PostgreSQL.
   // No variable arguments here, but standard subqueries run perfectly on Supabase.
   const sql = `
     SELECT
@@ -62,17 +62,23 @@ async function createOrder(payload) {
   const customerId = parseInt(payload.customer_id, 10);
   const vehicleId = parseInt(payload.vehicle_id, 10);
   const serviceIds = Array.isArray(payload.service_ids)
-    ? payload.service_ids.map((id) => parseInt(id, 10)).filter((n) => Number.isFinite(n))
+    ? payload.service_ids
+        .map((id) => parseInt(id, 10))
+        .filter((n) => Number.isFinite(n))
     : [];
   const orderTotalPrice = parseInt(payload.order_total_price, 10);
   const additionalRequest =
-    payload.additional_request != null ? String(payload.additional_request) : "";
+    payload.additional_request != null
+      ? String(payload.additional_request)
+      : "";
   const notesInternal =
     payload.notes_for_internal_use != null
       ? String(payload.notes_for_internal_use)
       : "";
   const notesCustomer =
-    payload.notes_for_customer != null ? String(payload.notes_for_customer) : "";
+    payload.notes_for_customer != null
+      ? String(payload.notes_for_customer)
+      : "";
 
   if (!Number.isFinite(employeeId) || employeeId < 1) {
     return { ok: false, error: "Invalid employee_id" };
@@ -116,7 +122,13 @@ async function createOrder(payload) {
           order_id, order_total_price, additional_request,
           notes_for_internal_use, notes_for_customer, additional_requests_completed
         ) VALUES ($1, $2, $3, $4, $5, 0)`,
-        [newOrderId, orderTotalPrice, additionalRequest, notesInternal, notesCustomer],
+        [
+          newOrderId,
+          orderTotalPrice,
+          additionalRequest,
+          notesInternal,
+          notesCustomer,
+        ],
       );
 
       // Changed placeholders to $1, $2
@@ -125,13 +137,13 @@ async function createOrder(payload) {
         [newOrderId],
       );
 
-      // Loop queries start tracking parameters over from $1 and $2 respectively
-      for (const sid of serviceIds) {
-        await conn.execute(
-          "INSERT INTO order_services (order_id, service_id, service_completed) VALUES ($1, $2, 0)",
-          [newOrderId, sid],
-        );
-      }
+      const valuesSql = serviceIds
+        .map((_, idx) => `($1, $${idx + 2}, 0)`)
+        .join(", ");
+      await conn.execute(
+        `INSERT INTO order_services (order_id, service_id, service_completed) VALUES ${valuesSql}`,
+        [newOrderId, ...serviceIds],
+      );
 
       return newOrderId;
     });
@@ -158,7 +170,8 @@ async function updateOrderStatus(orderId, orderStatus) {
   if (!Number.isFinite(status) || !allowed.has(status)) {
     return {
       ok: false,
-      error: "Invalid order_status (allowed: 1 Received, 2 In progress, 3 Completed)",
+      error:
+        "Invalid order_status (allowed: 1 Received, 2 In progress, 3 Completed)",
     };
   }
 

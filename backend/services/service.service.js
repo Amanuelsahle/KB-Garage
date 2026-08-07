@@ -3,13 +3,9 @@ const conn = require("../config/db.config");
 
 // check if service exists function
 async function checkIfServiceExists(service_name) {
-  // Changed placeholder from "?" to "$1"
-  const query = "SELECT * FROM common_services WHERE service_name = $1";
+  const query = "SELECT 1 FROM common_services WHERE service_name = $1 LIMIT 1";
   const rows = await conn.query(query, [service_name]);
-  if (rows.length > 0) {
-    return true;
-  }
-  return false;
+  return rows.length > 0;
 }
 
 // add service function
